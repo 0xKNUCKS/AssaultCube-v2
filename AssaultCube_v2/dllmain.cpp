@@ -23,8 +23,10 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
         while (!GetAsyncKeyState(VK_END)) {}
         
-        fclose(console_stream);
-        FreeConsole();
+        if (console_stream) {
+            fclose(console_stream);
+            FreeConsole();
+        }
         break;
     }
     return TRUE;
