@@ -9,7 +9,9 @@ Client AClient;
 
 DWORD WINAPI Main(HMODULE hModule)
 {
-    AClient.Run();
+    while (!GetAsyncKeyState(VK_END)) {
+        AClient.Run();
+    }
 
     return TRUE;
 }
@@ -29,6 +31,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         std::cout << "Hello, Welcome back.\n";
 
         CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(Main), hModule, 0, nullptr);
+
         break;
     case DLL_PROCESS_DETACH:
         FreeLibraryAndExitThread(hModule, 0);

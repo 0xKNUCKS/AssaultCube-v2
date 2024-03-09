@@ -16,12 +16,14 @@ bool Client::init(bool allocate_console)
 	if (!BasePtr)
 		return false;
 
-	LocalPlayer = (entPlayer*)(BasePtr + 0x10F4F4);
+	LocalPlayer = *(entPlayer**)(BasePtr + 0x10F4F4);
 }
 
 void Client::Run()
 {
-	// yet to come...
+	if (LocalPlayer) {
+		printf("localPlayer Health -> [%d]\n", LocalPlayer->Health);
+	}
 }
 
 void Client::Unoad()
