@@ -2,7 +2,15 @@
 const express = require('express');
 const router = express.Router();
 const generateID = require("../utils/generateRandomID")
-const redisClient = require("redis").createClient() //require("../shared/redisClient")
+const redis = require("redis") //require("../shared/redisClient")
+
+// create a redis client
+const redisClient = redis.createClient();
+
+redisClient.on('error', err => console.log(`[REDIS] Client Error:\t${err}`));
+redisClient.on('connect', () => { console.log(`[REDIS] Connected to Redis server`); });
+
+redisClient.connect()
 
 // redis is giving me headaches, temporary solution until i properly implement redis.
 let sessions = new Map();
@@ -14,29 +22,37 @@ router.post('/', (req, res) => {
     const userKey = `user:${req.ip}`
     const sessionID = generateID(userKey, 32)
 
-    //redisClient.exists(userKey).then((exists) => {
-    //    if (exists) {
-    //        console.log("User Exists!")
-    //    } else {
-    //        console.log("User does not Exist!")
-    //        redisClient.set(userKey, JSON.stringify({session: sessionID})).then(() => {console.log("User Added!")})
-    //    }
-    //})
+    redisClient.exists(userKey).then(exists => {
+        console.log(exists)
+        if (exists) {
+            res.status(409 /*Conflict error*/).set({
+                'Content-Type': 'application/json'
+            }).send({
+                message: "Cannot create another session! a session already exists for this user.",
+                data: {
+                    session: sessionID
+                }
+            });
+        }
+        else {
+            console.log(`[REDIS] creating a new session\n\t> User: ${userKey}\n\t> Session: ${sessionID}`)
 
-    const userExists = sessions.has(userKey)
+            //TODO: use: redisClient.json.set
+            redisClient.set(userKey, JSON.stringify({
+                session: sessionID
+            })).then(() => {console.log("Session created!")})
 
-    if (userExists) {
-        console.log("user exists!")
-        res.status(409 /*Conflict error*/).set({
-            'Content-Type': 'text/plain'
-        }).send("This user already has a session. Cannot create another one!");
-    } else {
-        console.log("created a session!")
-        sessions.set(userKey, sessionID);
-        res.status(200).set({
-            'Content-Type': 'text/plain',
-        }).send(sessionID)
-    }
+            res.status(201 /*Created*/).set({
+                'Content-Type': 'application/json',
+            }).send({
+                message: "Created a session succesfully!",
+                data: {
+                    session: sessionID
+                }
+            })
+        }
+    })
+
     console.log(sessionID)
 })
 
