@@ -1,13 +1,11 @@
-const redis = require('redis');
-const { promisify } = require('util');
+const redis = require("redis")
 
-// Create Redis client
+// create a redis client
 const redisClient = redis.createClient();
 
-// Promisify some methods of redis for better usage. (ass, do them later)
-const getAsync = promisify(redisClient.get).bind(redisClient);
-const setAsync = promisify(redisClient.set).bind(redisClient);
-const delAsync = promisify(redisClient.del).bind(redisClient);
-const existsAsync = promisify(redisClient.exists).bind(redisClient);
+redisClient.on('error', err => console.log(`[REDIS] Client Error:\t${err}`));
+redisClient.on('connect', () => { console.log(`[REDIS] Connected to Redis DB server`); });
+
+redisClient.connect()
 
 module.exports = redisClient;

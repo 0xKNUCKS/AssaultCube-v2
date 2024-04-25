@@ -2,18 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const generateID = require("../utils/generateRandomID")
-const redis = require("redis") //require("../shared/redisClient")
-
-// create a redis client
-const redisClient = redis.createClient();
-
-redisClient.on('error', err => console.log(`[REDIS] Client Error:\t${err}`));
-redisClient.on('connect', () => { console.log(`[REDIS] Connected to Redis server`); });
-
-redisClient.connect()
-
-// redis is giving me headaches, temporary solution until i properly implement redis.
-let sessions = new Map();
+const redisClient = require("../shared/redisClient")
 
 // handle POST requests
 router.post('/', (req, res) => {
@@ -24,17 +13,7 @@ router.post('/', (req, res) => {
 
     redisClient.exists(userKey).then(exists => {
         console.log(exists)
-        if (exists) {
-            res.status(409 /*Conflict error*/).set({
-                'Content-Type': 'application/json'
-            }).send({
-                message: "Cannot create another session! a session already exists for this user.",
-                data: {
-                    session: sessionID
-                }
-            });
-        }
-        else {
+        if (!exists) {
             console.log(`[REDIS] creating a new session\n\t> User: ${userKey}\n\t> Session: ${sessionID}`)
 
             //TODO: use: redisClient.json.set
@@ -50,6 +29,16 @@ router.post('/', (req, res) => {
                     session: sessionID
                 }
             })
+        }
+        else { // user already has a session
+            res.status(409 /*Conflict error*/).set({
+                'Content-Type': 'application/json'
+            }).send({
+                message: "Cannot create another session! a session already exists for this user.",
+                data: {
+                    session: sessionID
+                }
+            });
         }
     })
 
