@@ -47,7 +47,7 @@ router.get('/', (req, res) => {
 })
 
 // handle POST requests
-router.post('/', (req, res) => {
+router.post('/create', (req, res) => {
     console.log(`[${req.ip}] Recieved POST request: `);
 
     const userKey = `ip:${req.ip}`
