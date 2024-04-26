@@ -8,41 +8,65 @@ const redisClient = require("../shared/redisClient")
 router.post('/', (req, res) => {
     console.log(`[${req.ip}] Recieved POST request: `);
 
-    const userKey = `user:${req.ip}`
+    const userKey = `ip:${req.ip}`
     const sessionID = generateID(userKey, 32)
 
-    redisClient.exists(userKey).then(exists => {
-        console.log(exists)
-        if (!exists) {
-            console.log(`[REDIS] creating a new session\n\t> User: ${userKey}\n\t> Session: ${sessionID}`)
+    // TODO: user an actual DB for the users, like SQL
+    // check if the user is registered
+    redisClient.hGet("users", userKey).then((userData) => {
+        console.log("userData:", userData)
+        if (userData) {
+            userData = JSON.parse(userData)
 
-            //TODO: use: redisClient.json.set
-            redisClient.set(userKey, JSON.stringify({
-                session: sessionID
-            })).then(() => {console.log("Session created!")})
+            // if the user dosent have a session property in its data, create one for it
+            if (!userData.hasOwnProperty("session")) {
+                userData["session"] = sessionID;
+                redisClient.hSet("users", userKey, JSON.stringify(userData)).then(() => {console.log(`Added session property for user ${userKey}`)});
+            }
 
-            res.status(201 /*Created*/).set({
-                'Content-Type': 'application/json',
-            }).send({
-                message: "Created a session succesfully!",
-                data: {
-                    session: sessionID
+            // Check if the session already exists
+            redisClient.hExists("sessions", userData["session"]).then((sessionExists) => {
+                if (!sessionExists) {
+                    console.log(`[REDIS] creating a new session\n\t> User: ${userKey}\n\t> Session: ${sessionID}`)
+
+                    //TODO: use: redisClient.json.set
+                    redisClient.hSet("sessions", sessionID, JSON.stringify({
+                        userIP: req.ip
+                    })).then(() => {console.log("Session Created!")})
+        
+                    return res.status(201 /*Created*/).set({
+                        'Content-Type': 'application/json',
+                    }).send({
+                        message: "Created a session succesfully!",
+                        data: {
+                            session: sessionID
+                        }
+                    })
+                }
+                else {
+                    return res.status(409 /*Conflict error*/).set({
+                        'Content-Type': 'application/json'
+                    }).send({
+                        message: "a session already exists! cannot create another one",
+                        data: {
+                            session: sessionID
+                        }
+                    });
                 }
             })
+
         }
-        else { // user already has a session
-            res.status(409 /*Conflict error*/).set({
+        else {
+            return res.status(401 /*Unauthorized*/).set({
                 'Content-Type': 'application/json'
             }).send({
-                message: "Cannot create another session! a session already exists for this user.",
+                message: "User Not Registered!",
                 data: {
-                    session: sessionID
+                    session: '0'
                 }
             });
         }
     })
-
-    console.log(sessionID)
 })
 
 module.exports = router;
