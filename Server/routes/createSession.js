@@ -4,6 +4,48 @@ const router = express.Router();
 const generateID = require("../utils/generateRandomID")
 const redisClient = require("../shared/redisClient")
 
+// handle GET reqests
+router.get('/', (req, res) => {
+    const userKey = `ip:${req.ip}`
+
+    redisClient.hGet("users", userKey).then((userData) => {
+        if (userData) {
+            userData = JSON.parse(userData)
+
+            if (userData.hasOwnProperty("session")) {
+                return res.status(200 /*OK*/).set({
+                    'Content-Type': 'application/json'
+                }).send({
+                    message: "Session retrieved successfully",
+                    data: {
+                        session: userData["session"]
+                    }
+                })
+            }
+            else {
+                return res.status(404 /*Not Found*/).set({
+                    'Content-Type': 'application/json'
+                }).send({
+                    message: "User does not have a session!",
+                    data: {
+                        session: '0'
+                    }
+                })
+            }
+        }
+        else {
+            return res.status(401 /*Unauthorized*/).set({
+                'Content-Type': 'application/json'
+            }).send({
+                message: "User Not Registered!",
+                data: {
+                    session: '0'
+                }
+            });
+        }
+    })
+})
+
 // handle POST requests
 router.post('/', (req, res) => {
     console.log(`[${req.ip}] Recieved POST request: `);
@@ -14,7 +56,6 @@ router.post('/', (req, res) => {
     // TODO: user an actual DB for the users, like SQL
     // check if the user is registered
     redisClient.hGet("users", userKey).then((userData) => {
-        console.log("userData:", userData)
         if (userData) {
             userData = JSON.parse(userData)
 
