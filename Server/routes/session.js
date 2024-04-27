@@ -6,9 +6,9 @@ const redisClient = require("../shared/redisClient")
 
 // handle GET reqests
 router.get('/', (req, res) => {
-    const userKey = `ip:${req.ip}`
+    const {username, password} = req.body;
 
-    redisClient.hGet("users", userKey).then((userData) => {
+    redisClient.hGet("users", username).then((userData) => {
         if (userData) {
             userData = JSON.parse(userData)
 
@@ -50,29 +50,30 @@ router.get('/', (req, res) => {
 router.post('/create', (req, res) => {
     console.log(`[${req.ip}] Recieved POST request: `);
 
-    const userKey = `ip:${req.ip}`
-    const sessionID = generateID(userKey, 32)
+    const {username, password} = req.body;
+
+    const sessionID = generateID(username, 32)
 
     // TODO: user an actual DB for the users, like SQL
     // check if the user is registered
-    redisClient.hGet("users", userKey).then((userData) => {
+    redisClient.hGet("users", username).then((userData) => {
         if (userData) {
             userData = JSON.parse(userData)
 
             // if the user dosent have a session property in its data, create one for it
             if (!userData.hasOwnProperty("session")) {
                 userData["session"] = sessionID;
-                redisClient.hSet("users", userKey, JSON.stringify(userData)).then(() => {console.log(`Added session property for user ${userKey}`)});
+                redisClient.hSet("users", username, JSON.stringify(userData)).then(() => {console.log(`Added session property for user ${username}`)});
             }
 
             // Check if the session already exists
             redisClient.hExists("sessions", userData["session"]).then((sessionExists) => {
                 if (!sessionExists) {
-                    console.log(`[REDIS] creating a new session\n\t> User: ${userKey}\n\t> Session: ${sessionID}`)
+                    console.log(`[REDIS] creating a new session\n\t> User: ${username}\n\t> Session: ${sessionID}`)
 
                     //TODO: use: redisClient.json.set
                     redisClient.hSet("sessions", sessionID, JSON.stringify({
-                        userIP: req.ip
+                        owner: username
                     })).then(() => {console.log("Session Created!")})
         
                     return res.status(201 /*Created*/).set({
