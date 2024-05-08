@@ -12,12 +12,17 @@ router.get('/', (req, res) => {
 
 router.post('/register', (req, res) => {
     const {username, password} = req.body;
+    const timeStamp = new Date().getTime();
 
     redisClient.hExists("users", username).then((userExists) => {
         if (!userExists) {
             redisClient.hSet("users", username, JSON.stringify({
                 password: password,
-                ip: req.ip
+                ip: req.ip,
+                timestamps: {
+                    created: timeStamp,
+                    last_login: timeStamp
+                }
             })).then(() => {console.log(`> Registered New user (${username}:${req.ip})`)})
 
             return res.status(201 /*Created*/).set({
@@ -38,11 +43,16 @@ router.post('/register', (req, res) => {
 
 router.post('/login', (req, res) => {
     const {username, password} = req.body;
+    const timeStamp = new Date().getTime();
 
     redisClient.hExists("users", username).then((userExists) => {
         if (userExists) {
             redisClient.hGet("users", username).then((data) => {
                 let dataObj = JSON.parse(data);
+
+                // Update the last login timestamp
+                dataObj["timestamps"]["last_login"] = timeStamp
+                redisClient.hSet("users", username, JSON.stringify(dataObj)).then(() => {/* log or something lol */})
 
                 if (dataObj.hasOwnProperty("password")) {
                     if (password === dataObj["password"]) {
