@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const redisClient = require("../shared/redisClient")
+const bcrypt = require("bcrypt")
 
 router.get('/', (req, res) => {
     // Give back user info to be then displayed in a "profile" page, not much to give now tho
@@ -16,14 +17,16 @@ router.post('/register', (req, res) => {
 
     redisClient.hExists("users", username).then((userExists) => {
         if (!userExists) {
-            redisClient.hSet("users", username, JSON.stringify({
-                password: password,
-                ip: req.ip,
-                timestamps: {
-                    created: timeStamp,
-                    last_login: timeStamp
-                }
-            })).then(() => {console.log(`> Registered New user (${username}:${req.ip})`)})
+            bcrypt.hash(password, 11).then((hashedPassword) => {
+                redisClient.hSet("users", username, JSON.stringify({
+                    password: hashedPassword,
+                    ip: req.ip,
+                    timestamps: {
+                        created: timeStamp,
+                        last_login: timeStamp
+                    }
+                })).then(() => {console.log(`> Registered New user (${username}:${req.ip})`)})
+            })
 
             return res.status(201 /*Created*/).set({
                 'Content-Type': 'application/json',
@@ -55,19 +58,21 @@ router.post('/login', (req, res) => {
                 redisClient.hSet("users", username, JSON.stringify(dataObj)).then(() => {/* log or something lol */})
 
                 if (dataObj.hasOwnProperty("password")) {
-                    if (password === dataObj["password"]) {
-                        return res.status(200 /*OK*/).set({
-                            'Content-Type': 'application/json'
-                        }).send({
-                            message: "Success!"
-                        })
-                    } else { // hate the repetitive code, will be improved later
-                        return res.status(404 /*Not Found*/).set({
-                            'Content-Type': 'application/json'
-                        }).send({
-                            message: "Username or password is invalid!"
-                        })
-                    }
+                    bcrypt.compare(password, dataObj["password"]).then((result) => {
+                        if (result) {
+                            return res.status(200 /*OK*/).set({
+                                'Content-Type': 'application/json'
+                            }).send({
+                                message: "Success!"
+                            })
+                        } else { // hate the repetitive code, will be improved later
+                            return res.status(404 /*Not Found*/).set({
+                                'Content-Type': 'application/json'
+                            }).send({
+                                message: "Username or password is invalid!"
+                            })
+                        }
+                    })
                 }
             })
         }
