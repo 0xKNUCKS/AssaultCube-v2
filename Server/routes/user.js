@@ -8,9 +8,6 @@ router.get('/', (req, res) => {
     // Give back user info to be then displayed in a "profile" page, not much to give now tho
 })
 
-// for now not much is added, the password is pretty much useless ill make up a system for it later and hash it too,
-// but for now this is just what we got, basically just a simple username system.
-
 router.post('/register', (req, res) => {
     const {username, password} = req.body;
     const timeStamp = new Date().getTime();
