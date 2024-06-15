@@ -74,7 +74,8 @@ router.post('/create', (req, res) => {
         })
     }
 
-    const sessionID = generateID(username, 32)
+    let sessionID = generateID(username, 32)
+    const timeStamp = new Date();
 
     // TODO: user an actual DB for the users, like SQL
     // check if the user is registered
@@ -91,16 +92,14 @@ router.post('/create', (req, res) => {
         }
 
         let userData = JSON.parse(data)
-
-        // if the user dosent have a session property in its data, create one for it
-        if (!userData.hasOwnProperty("session")) {
-            userData["session"] = sessionID;
-            redisClient.hSet("users", username, JSON.stringify(userData)).then(() => {console.log(`Added session property for user ${username}`)});
+        
+        if (userData["session"] != null) {
+            sessionID = userData["session"]["key"];
         }
 
-        // Check if the session already exists
-        redisClient.hExists("sessions", userData["session"]).then((sessionExists) => {
-            if (!sessionExists) {
+        // Check if the session already exists in the sessions list
+        redisClient.hExists("sessions", sessionID).then((sessionExists) => {
+            if (sessionExists) {
                 return res.status(409 /*Conflict error*/).set({
                     'Content-Type': 'application/json'
                 }).send({
@@ -114,11 +113,20 @@ router.post('/create', (req, res) => {
             // the user dosent already have a session, so create one for him.
             console.log(`[REDIS] creating a new session\n\t> User: ${username}\n\t> Session: ${sessionID}`)
 
-            //TODO: use: redisClient.json.set
+            // store the session in the user
+            userData["session"] = {
+                key: sessionID,
+                created_at: timeStamp.toISOString()
+            }
+            redisClient.hSet("users", username, JSON.stringify(userData)).then(() => {console.log(`Added session property for user ${username}`)});
+
+            // add the session to the sessions list
             redisClient.hSet("sessions", sessionID, JSON.stringify({
-                owner: username
+                owner: username,
+                created_at: timeStamp.toISOString()
             })).then(() => {console.log("Session Created!")})
 
+            // send back the session ID
             return res.status(201 /*Created*/).set({
                 'Content-Type': 'application/json',
             }).send({
