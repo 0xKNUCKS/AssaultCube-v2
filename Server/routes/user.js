@@ -36,6 +36,7 @@ router.post('/register', (req, res) => {
                 password: hashedPassword,
                 ip: req.ip,
                 token: null,
+                session: null,
                 timestamps: {
                     created: timeStamp,
                     last_login: timeStamp
@@ -79,44 +80,42 @@ router.post('/login', (req, res) => {
         redisClient.hGet("users", username).then((data) => {
             let userData = JSON.parse(data);
 
-            if (userData.hasOwnProperty("password")) {
-                bcrypt.compare(password, userData["password"]).then((result) => {
-                    if (result) { // passed!
-                        // generate a temporary token valid for 24hrs used to validate actions in the API.
-                        const tokenId = generateRandomID(req.ip + username, 32)
-                        const tokenExpiryDate = new Date(new Date().setDate(timeStamp.getDate() + 1)) // 1 day from now.
-                        
-                        // Update the last login timestamp & store token
-                        userData["timestamps"]["last_login"] = timeStamp.toISOString()
-                        userData["token"] = {
-                            key: tokenId,
-                            expiry: tokenExpiryDate
-                        }
-
-                        redisClient.hSet("users", username, JSON.stringify(userData)).then(() => {
-                            console.log(`> User successfully logged in [${username} with token ${tokenId}]`)
-                        })
-
-                        return res.status(200 /*OK*/).set({
-                            'Content-Type': 'application/json'
-                        }).send({
-                            message: "Success!",
-                            data: {
-                                token: tokenId
-                            }
-                        })
-                    } else { // hate the repetitive code, will be improved later
-                        return res.status(404 /*Not Found*/).set({
-                            'Content-Type': 'application/json'
-                        }).send({
-                            message: "Username or password is invalid!",
-                            data: {
-                                token: null
-                            }
-                        })
+            bcrypt.compare(password, userData["password"]).then((result) => {
+                if (result) { // passed!
+                    // generate a temporary token valid for 24hrs used to validate actions in the API.
+                    const tokenId = generateRandomID(req.ip + username, 32)
+                    const tokenExpiryDate = new Date(new Date().setDate(timeStamp.getDate() + 1)) // 1 day from now.
+                    
+                    // Update the last login timestamp & store token
+                    userData["timestamps"]["last_login"] = timeStamp.toISOString()
+                    userData["token"] = {
+                        key: tokenId,
+                        expiry: tokenExpiryDate
                     }
-                })
-            }
+
+                    redisClient.hSet("users", username, JSON.stringify(userData)).then(() => {
+                        console.log(`> User successfully logged in [${username} with token ${tokenId}]`)
+                    })
+
+                    return res.status(200 /*OK*/).set({
+                        'Content-Type': 'application/json'
+                    }).send({
+                        message: "Success!",
+                        data: {
+                            token: tokenId
+                        }
+                    })
+                } else { // hate the repetitive code, will be improved later
+                    return res.status(404 /*Not Found*/).set({
+                        'Content-Type': 'application/json'
+                    }).send({
+                        message: "Username or password is invalid!",
+                        data: {
+                            token: null
+                        }
+                    })
+                }
+            })
         })
     })
 })
