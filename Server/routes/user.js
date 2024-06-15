@@ -10,6 +10,15 @@ router.get('/', (req, res) => {
 
 router.post('/register', (req, res) => {
     const {username, password} = req.body;
+
+    if (!username || !password) {
+        return res.status(400 /*Bad Request*/).set({
+            'Content-Type': 'application/json',
+        }).send({
+            message: "Username and password are required!"
+        })
+    }
+
     const timeStamp = new Date().toISOString();
 
     redisClient.hExists("users", username).then((userExists) => {
@@ -43,6 +52,15 @@ router.post('/register', (req, res) => {
 
 router.post('/login', (req, res) => {
     const {username, password} = req.body;
+
+    if (!username || !password) {
+        return res.status(400 /*Bad Request*/).set({
+            'Content-Type': 'application/json',
+        }).send({
+            message: "Username and password are required!"
+        })
+    }
+    
     const timeStamp = new Date().toISOString();
 
     redisClient.hExists("users", username).then((userExists) => {

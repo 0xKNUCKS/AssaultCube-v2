@@ -10,6 +10,14 @@ const sockets = require('socket.io')
 router.post('/', (req, res) => {
     const {username, password} = req.body;
 
+    if (!username || !password) {
+        return res.status(400 /*Bad Request*/).set({
+            'Content-Type': 'application/json',
+        }).send({
+            message: "Username and password are required!"
+        })
+    }
+
     redisClient.hGet("users", username).then((userData) => {
         if (userData) {
             userData = JSON.parse(userData)
@@ -57,9 +65,15 @@ router.get('/:sessionId', (req, res) => {
 })
 
 router.post('/create', (req, res) => {
-    console.log(`[${req.ip}] Recieved POST request: `);
-
     const {username, password} = req.body;
+
+    if (!username || !password) {
+        return res.status(400 /*Bad Request*/).set({
+            'Content-Type': 'application/json',
+        }).send({
+            message: "Username and password are required!"
+        })
+    }
 
     const sessionID = generateID(username, 32)
 
