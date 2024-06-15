@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
 
 router.post('/register', (req, res) => {
     const {username, password} = req.body;
-    const timeStamp = new Date().getTime();
+    const timeStamp = new Date().toISOString();
 
     redisClient.hExists("users", username).then((userExists) => {
         if (!userExists) {
@@ -43,7 +43,7 @@ router.post('/register', (req, res) => {
 
 router.post('/login', (req, res) => {
     const {username, password} = req.body;
-    const timeStamp = new Date().getTime();
+    const timeStamp = new Date().toISOString();
 
     redisClient.hExists("users", username).then((userExists) => {
         if (userExists) {
