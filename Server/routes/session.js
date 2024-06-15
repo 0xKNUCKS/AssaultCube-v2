@@ -3,9 +3,11 @@ const express = require('express');
 const router = express.Router();
 const generateID = require("../utils/generateRandomID")
 const redisClient = require("../shared/redisClient")
+const sockets = require('socket.io')
 
-// handle GET reqests
-router.get('/', (req, res) => {
+
+// handle POST reqests
+router.post('/', (req, res) => {
     const {username, password} = req.body;
 
     redisClient.hGet("users", username).then((userData) => {
@@ -28,7 +30,7 @@ router.get('/', (req, res) => {
                 }).send({
                     message: "User does not have a session!",
                     data: {
-                        session: '0'
+                        session: null
                     }
                 })
             }
@@ -39,14 +41,21 @@ router.get('/', (req, res) => {
             }).send({
                 message: "User Not Registered!",
                 data: {
-                    session: '0'
+                    session: null
                 }
             });
         }
     })
 })
 
-// handle POST requests
+router.get('/:sessionId', (req, res) => {
+    const {sessionId} = req.params;
+
+    console.log(sessionId)
+
+    res.send(sessionId);
+})
+
 router.post('/create', (req, res) => {
     console.log(`[${req.ip}] Recieved POST request: `);
 
@@ -104,7 +113,7 @@ router.post('/create', (req, res) => {
             }).send({
                 message: "User Not Registered!",
                 data: {
-                    session: '0'
+                    session: null
                 }
             });
         }

@@ -17,6 +17,8 @@ bool Client::init(bool allocate_console)
 		return false;
 
 	LocalPlayer = *(entPlayer**)(BasePtr + 0x10F4F4);
+
+	return true;
 }
 
 void Client::Run()

@@ -1,14 +1,12 @@
 'use strict';
-const debug = require('debug')('my express app');
 const express = require('express');
 const path = require('path');
-const favicon = require('serve-favicon');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-const fs = require("fs")
 const app = express();
 const registerRoutes = require("./helpers/registerRoutes")
+const server = require("http").Server(app);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -57,6 +55,6 @@ app.use(function (err, req, res, next) {
 
 app.set('port', process.env.PORT || 3000);
 
-const server = app.listen(app.get('port'), function () {
-    console.log('Express server listening on port ' + server.address().port);
+server.listen(app.get('port'), function () {
+    console.log('[SERVER] Express & Sockets server listening on port ' + server.address().port);
 });
