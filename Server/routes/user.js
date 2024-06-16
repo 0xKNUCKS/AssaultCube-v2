@@ -20,7 +20,7 @@ router.post('/register', (req, res) => {
         })
     }
 
-    const timeStamp = new Date().toISOString();
+    const timeStamp = new Date();
 
     redisClient.hExists("users", username).then((userExists) => {
         if (userExists) {
@@ -38,8 +38,8 @@ router.post('/register', (req, res) => {
                 token: null,
                 session: null,
                 timestamps: {
-                    created: timeStamp,
-                    last_login: timeStamp
+                    created: timeStamp.toISOString(),
+                    last_login: timeStamp.toISOString()
                 }
             })).then(() => {console.log(`> Registered New user (${username}:${req.ip})`)})
         })
