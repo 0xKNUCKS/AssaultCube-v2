@@ -3,33 +3,13 @@ const express = require('express');
 const router = express.Router();
 const generateID = require("../utils/generateRandomID")
 const redisClient = require("../shared/redisClient")
-const sockets = require('socket.io')
-
+const authToken = require("../helpers/authToken")
 
 // handle POST reqests
-router.post('/', (req, res) => {
-    const {username, password} = req.body;
-
-    if (!username || !password) {
-        return res.status(400 /*Bad Request*/).set({
-            'Content-Type': 'application/json',
-        }).send({
-            message: "Username and password are required!"
-        })
-    }
+router.post('/', authToken, (req, res) => {
+    const {username} = req.body;
 
     redisClient.hGet("users", username).then((userData) => {
-        if (!userData) {
-            return res.status(401 /*Unauthorized*/).set({
-                'Content-Type': 'application/json'
-            }).send({
-                message: "User Not Registered!",
-                data: {
-                    session: null
-                }
-            });
-        }
-
         userData = JSON.parse(userData)
 
         if (userData.hasOwnProperty("session")) {
@@ -55,44 +35,16 @@ router.post('/', (req, res) => {
     })
 })
 
-router.get('/:sessionId', (req, res) => {
-    const {sessionId} = req.params;
-
-    console.log(sessionId)
-
-    res.send(sessionId);
-})
-
-router.post('/create', (req, res) => {
-    const {username, password} = req.body;
-
-    if (!username || !password) {
-        return res.status(400 /*Bad Request*/).set({
-            'Content-Type': 'application/json',
-        }).send({
-            message: "Username and password are required!"
-        })
-    }
-
+router.post('/create', authToken, (req, res) => {
+    const {username} = req.body;
     let sessionID = generateID(username, 32)
     const timeStamp = new Date();
 
-    // TODO: user an actual DB for the users, like SQL
-    // check if the user is registered
+    // check if the user is registered & authed
     redisClient.hGet("users", username).then((data) => {
-        if (!data) {
-            return res.status(401 /*Unauthorized*/).set({
-                'Content-Type': 'application/json'
-            }).send({
-                message: "User Not Registered!",
-                data: {
-                    session: null
-                }
-            });
-        }
-
         let userData = JSON.parse(data)
         
+        // check if a user already has a session
         if (userData["session"] != null) {
             sessionID = userData["session"]["key"];
         }
