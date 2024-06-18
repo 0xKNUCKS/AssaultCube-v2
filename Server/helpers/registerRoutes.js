@@ -6,7 +6,7 @@ const removeFirstFolder = require("../utils/removeFirstFolder")
 const normalizeRoutePath = require("../utils/normalizeRoutePath")
 // getting quite cluttered ik, TODO: Manage and handle util functions more properly.
 
-module.exports = (expressApp, routesPath) => {
+module.exports = (expressApp, routesPath, routesTag = "") => {
     // Parse all routes and use them
     const routesFolder = fs.readdirSync(routesPath)
     for (let routeFile of routesFolder)
@@ -19,10 +19,13 @@ module.exports = (expressApp, routesPath) => {
             const route = require(path.resolve(routePath));
     
             routeFile = removeExtension(routeFile == "index.js" ? "" : routeFile) // handle the index route to just be "", then remove the file extension too.
+
+            // TERRIBLE code right here, to be fixed later.
             let finalRoutePath = removeFirstFolder( // prevent adding the "route/" folder!
                                 removeExtension(
                                 normalizeRoutePath(path.join('/', routesPath, routeFile))
                                 )); // not sure if this was even a good idea to make all of these funcions but well oh well. i hope its easier to read like this.
+            finalRoutePath = path.join(routesTag, finalRoutePath);
             expressApp.use(finalRoutePath, route);
             console.log(`> Registered Route "${finalRoutePath}"`)
         }
