@@ -6,26 +6,28 @@ const removeFirstFolder = require("../utils/removeFirstFolder")
 const normalizeRoutePath = require("../utils/normalizeRoutePath")
 // getting quite cluttered ik, TODO: Manage and handle util functions more properly.
 
-module.exports = (expressApp, routesPath, routesTag = "") => {
+module.exports = (expressApp, targetPath, routesTag = "") => {
     // Parse all routes and use them
-    const routesFolder = fs.readdirSync(routesPath)
+    const routesFolder = fs.readdirSync(targetPath)
+
     for (let routeFile of routesFolder)
     {
-        let routePath = path.join(routesPath, routeFile);
+        let routePath = path.join(targetPath, routeFile);
 
+        // check if the given path is a 'folder'.
         if (fs.lstatSync(routePath).isDirectory()) {
             module.exports(expressApp, routePath) // recursive call incase of sub-folders
         } else {
+            // retrieve the route's function from its file.
             const route = require(path.resolve(routePath));
     
-            routeFile = removeExtension(routeFile == "index.js" ? "" : routeFile) // handle the index route to just be "", then remove the file extension too.
+            // handle the index route name to be empty, and remove the file extension too: '.js'
+            routeFile = removeExtension(routeFile == "index.js" ? "" : routeFile)
 
-            // TERRIBLE code right here, to be fixed later.
-            let finalRoutePath = removeFirstFolder( // prevent adding the "route/" folder!
-                                removeExtension(
-                                normalizeRoutePath(path.join('/', routesPath, routeFile))
-                                )); // not sure if this was even a good idea to make all of these funcions but well oh well. i hope its easier to read like this.
-            finalRoutePath = path.join(routesTag, finalRoutePath);
+            // swap all the file slashes '\' to route slashes '/'
+            let finalRoutePath = normalizeRoutePath(path.join('/', routesTag, routeFile));
+
+            // assign the route function to the route path.
             expressApp.use(finalRoutePath, route);
             console.log(`> Registered Route "${finalRoutePath}"`)
         }
