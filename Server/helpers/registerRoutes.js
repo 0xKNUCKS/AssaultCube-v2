@@ -2,9 +2,7 @@ const res = require("express/lib/response")
 const fs = require("fs")
 const path = require("path")
 const removeExtension = require("../utils/removeExtension")
-const removeFirstFolder = require("../utils/removeFirstFolder")
 const normalizeRoutePath = require("../utils/normalizeRoutePath")
-// getting quite cluttered ik, TODO: Manage and handle util functions more properly.
 
 module.exports = (expressApp, targetPath, routesTag = "") => {
     // Parse all routes and use them
