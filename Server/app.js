@@ -7,6 +7,9 @@ const bodyParser = require('body-parser');
 const app = express();
 const registerRoutes = require("./helpers/registerRoutes")
 const server = require("http").Server(app);
+const webSocket = require("ws")
+const url = require('node:url')
+const queryString = require('node:querystring')
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -58,3 +61,31 @@ app.set('port', process.env.PORT || 3000);
 server.listen(app.get('port'), function () {
     console.log('[SERVER] Express & Sockets server listening on port ' + server.address().port);
 });
+
+// Listen for socket connections from our epxress server
+const wsServer = new webSocket.Server({server, path: "/api/v1/session/listen"})
+
+wsServer.on('connection', (socket, req) => {
+    console.log(`\n> A new connection established (ip:port):\n\t${req.socket.remoteAddress}:${req.socket.remotePort}\n`);
+
+    const socketParams = queryString.parse(url.parse(req.url).query)
+    const sessionID = socketParams["id"]
+    const tokenID = socketParams["token"]
+    if (!sessionID || !tokenID) {
+        socket.close(4000, "Session and Token are required to continue!")
+    }
+    
+    socket.on('message', (message) => {
+        console.log(`Recieved Message: ${message}`);
+
+        socket.send(`You fr said ${message}? how typical smh.`)
+    })
+
+    socket.on('close', (code, reasonBuffer) => {
+        console.log(`'close' has been called!\n\tCode: ${code}\n\treason: ${reasonBuffer}`)
+    })
+
+    socket.on('error', (err) => {
+        console.log(`Error Recieved from socket\n\tError: ${err.message}\n${err.stack}`)
+    })
+})
