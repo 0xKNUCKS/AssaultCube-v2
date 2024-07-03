@@ -10,6 +10,7 @@ const server = require("http").Server(app);
 const webSocket = require("ws")
 const url = require('node:url')
 const queryString = require('node:querystring')
+const redisClient = require('./shared/redisClient')
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -72,11 +73,44 @@ wsServer.on('connection', (socket, req) => {
     const sessionID = socketParams["id"]
     const tokenID = socketParams["token"]
     if (!sessionID || !tokenID) {
-        socket.close(4000, "Session and Token are required to continue!")
+        return socket.close(4000, "Session and Token are required to continue!")
     }
+
+    //     redisClient.hExists("users", username).then((userExists) => {
+
+    redisClient.hExists("sessions", sessionID).then((sessionExists) => {
+        if (!sessionExists) {
+            return socket.close(4001, "Session Provided is invalid");
+        }
+
+        redisClient.hGet("sessions", sessionID).then((data) => {
+            let sessionData = JSON.parse(data);
+            let sessionOwner = sessionData["owner"];
+
+            redisClient.hGet("users", sessionOwner).then((user) => {
+                let userData = JSON.parse(user);
+                
+                const userToken = userData["token"]
+                const userTokenExpiryDate = new Date(userToken["expiry"])
+                const timeStamp = new Date()
+        
+                // check the size of the token & if its the same one the user has.
+                if (token.length != 32 || userToken["key"] != token) {
+                    return socket.close(4000, "Session and Token are required to continue!")
+                }
+        
+                // check if the token expiry time has passed today
+                if (userTokenExpiryDate.getTime() < timeStamp.getTime()) {
+                    return socket.close(4000, "Session and Token are required to continue!")
+                }
+            })
+        })
+    })
     
     socket.on('message', (message) => {
         console.log(`Recieved Message: ${message}`);
+
+        
 
         socket.send(`You fr said ${message}? how typical smh.`)
     })
