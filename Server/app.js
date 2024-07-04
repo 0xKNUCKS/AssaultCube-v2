@@ -96,12 +96,12 @@ wsServer.on('connection', (socket, req) => {
         
                 // check the size of the token & if its the same one the user has.
                 if (token.length != 32 || userToken["key"] != token) {
-                    return socket.close(4000, "Session and Token are required to continue!")
+                    return socket.close(4000, "Token provided is invalid!")
                 }
         
                 // check if the token expiry time has passed today
                 if (userTokenExpiryDate.getTime() < timeStamp.getTime()) {
-                    return socket.close(4000, "Session and Token are required to continue!")
+                    return socket.close(4000, "Token provided is expired!")
                 }
             })
         })
