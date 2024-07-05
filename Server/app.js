@@ -67,35 +67,36 @@ server.listen(app.get('port'), function () {
 const wsServer = new webSocket.Server({server, path: "/api/v1/session/listen"})
 
 wsServer.on('connection', (socket, req) => {
-    console.log(`\n> A new connection established (ip:port):\n\t${req.socket.remoteAddress}:${req.socket.remotePort}\n`);
+    const socketID = `${req.socket.remoteAddress}:${req.socket.remotePort}`
+    console.log(`\n> A new connection established (ip:port):\n\t${socketID}\n`);
 
     const socketParams = queryString.parse(url.parse(req.url).query)
-    const sessionID = socketParams["id"]
-    const tokenID = socketParams["token"]
-    if (!sessionID || !tokenID) {
+    const socketSessionID = socketParams["id"]
+    const socketTokenID = socketParams["token"]
+    if (!socketTokenID || !socketSessionID) {
         return socket.close(4000, "Session and Token are required to continue!")
     }
 
     //     redisClient.hExists("users", username).then((userExists) => {
 
-    redisClient.hExists("sessions", sessionID).then((sessionExists) => {
+    redisClient.hExists("sessions", socketSessionID).then((sessionExists) => {
         if (!sessionExists) {
             return socket.close(4001, "Session Provided is invalid");
         }
 
-        redisClient.hGet("sessions", sessionID).then((data) => {
+        redisClient.hGet("sessions", socketSessionID).then((data) => {
             let sessionData = JSON.parse(data);
             let sessionOwner = sessionData["owner"];
 
             redisClient.hGet("users", sessionOwner).then((user) => {
                 let userData = JSON.parse(user);
                 
-                const userToken = userData["token"]
-                const userTokenExpiryDate = new Date(userToken["expiry"])
+                const userTokenID = userData["token"]["key"]
+                const userTokenExpiryDate = new Date(userData["token"]["expiry"])
                 const timeStamp = new Date()
         
                 // check the size of the token & if its the same one the user has.
-                if (token.length != 32 || userToken["key"] != token) {
+                if (userTokenID.length != 32 || userTokenID != socketTokenID) {
                     return socket.close(4000, "Token provided is invalid!")
                 }
         
@@ -103,6 +104,8 @@ wsServer.on('connection', (socket, req) => {
                 if (userTokenExpiryDate.getTime() < timeStamp.getTime()) {
                     return socket.close(4000, "Token provided is expired!")
                 }
+
+                console.log(`> Socket "${socketID}":\n\tsuccessfully logged in as "${sessionOwner}"\n`)
             })
         })
     })
