@@ -12,7 +12,7 @@ router.post('/', authToken, (req, res) => {
     redisClient.hGet("users", username).then((userData) => {
         userData = JSON.parse(userData)
 
-        if (userData.hasOwnProperty("session")) {
+        if (userData["session"]) {
             return res.status(200 /*OK*/).set({
                 'Content-Type': 'application/json'
             }).send({
