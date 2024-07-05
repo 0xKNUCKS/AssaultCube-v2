@@ -11,14 +11,15 @@ router.post('/', authToken, (req, res) => {
 
     redisClient.hGet("users", username).then((userData) => {
         userData = JSON.parse(userData)
+        const userSession = userData["session"]
 
-        if (userData["session"]) {
+        if (userSession) {
             return res.status(200 /*OK*/).set({
                 'Content-Type': 'application/json'
             }).send({
                 message: "Session retrieved successfully",
                 data: {
-                    session: userData["session"]
+                    session: userSession
                 }
             })
         }
