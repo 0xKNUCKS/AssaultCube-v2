@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
 })
 
 router.post('/register', (req, res) => {
-    const {username, password} = req.body;
+    const { username, password } = req.body;
 
     if (!username || !password) {
         return res.status(400 /*Bad Request*/).set({
@@ -41,7 +41,7 @@ router.post('/register', (req, res) => {
                     created: timeStamp.toISOString(),
                     last_login: timeStamp.toISOString()
                 }
-            })).then(() => {console.log(`> Registered New user (${username}:${req.ip})`)})
+            })).then(() => { console.log(`> Registered New user (${username}:${req.ip})`) })
         })
 
         return res.status(201 /*Created*/).set({
@@ -53,7 +53,7 @@ router.post('/register', (req, res) => {
 })
 
 router.post('/login', (req, res) => {
-    const {username, password} = req.body;
+    const { username, password } = req.body;
 
     if (!username || !password) {
         return res.status(400 /*Bad Request*/).set({
@@ -65,7 +65,7 @@ router.post('/login', (req, res) => {
             }
         })
     }
-    
+
     const timeStamp = new Date();
 
     redisClient.hExists("users", username).then((userExists) => {
@@ -85,7 +85,7 @@ router.post('/login', (req, res) => {
                     // generate a temporary token valid for 24hrs used to validate actions in the API.
                     const tokenId = generateRandomID(req.ip + username, 32)
                     const tokenExpiryDate = new Date(new Date().setDate(timeStamp.getDate() + 1)) // 1 day from now.
-                    
+
                     // Update the last login timestamp & store token
                     userData["timestamps"]["last_login"] = timeStamp.toISOString()
                     userData["token"] = {
