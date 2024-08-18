@@ -1,6 +1,6 @@
 'use strict';
-const express = require('express');
-const router = express.Router();
+import * as expressModule from 'express'
+const router = expressModule.Router();
 
 /* GET home page. */
 router.get('/', function (req, res) {
@@ -15,4 +15,4 @@ router.post('/', (req, res) => {
     }).send(`Get back your god damn request gng ${JSON.stringify(req.body)}`)
 })
 
-module.exports = router;
+export default router;

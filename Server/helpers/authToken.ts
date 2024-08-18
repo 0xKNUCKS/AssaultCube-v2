@@ -1,9 +1,10 @@
-const redisClient = require("../shared/redisClient")
+import { NextFunction, Request, Response } from "express";
+import redisClient from "../shared/redisClient";
 
 // TODO: use JWT
 
-module.exports = (req, res, next) => {
-    const {username, token} = req.body;
+export default (req: Request, res: Response, next: NextFunction) => {
+    const { username, token } = req.body;
 
     if (!username || !token) {
         return res.status(400 /*Bad Request*/).set({

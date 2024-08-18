@@ -1,17 +1,19 @@
 'use strict';
-const express = require('express');
-const router = express.Router();
-const generateID = require("../utils/generateRandomID")
-const redisClient = require("../shared/redisClient")
-const authToken = require("../helpers/authToken")
+
+import * as expressModule from 'express'
+import generateRandomID from '../utils/generateRandomID';
+import redisClient from '../shared/redisClient';
+import authToken from '../helpers/authToken'
+
+const router = expressModule.Router();
 
 // handle POST reqests
 router.post('/', authToken, (req, res) => {
-    const {username} = req.body;
+    const { username } = req.body;
 
     redisClient.hGet("users", username).then((userData) => {
-        userData = JSON.parse(userData)
-        const userSession = userData["session"]
+        const parsedData = JSON.parse(userData || "")
+        const userSession = parsedData["session"]
 
         if (userSession) {
             return res.status(200 /*OK*/).set({
@@ -37,14 +39,14 @@ router.post('/', authToken, (req, res) => {
 })
 
 router.post('/create', authToken, (req, res) => {
-    const {username} = req.body;
-    let sessionID = generateID(username, 32)
+    const { username } = req.body;
+    let sessionID = generateRandomID(username, 32)
     const timeStamp = new Date();
 
     // check if the user is registered & authed
     redisClient.hGet("users", username).then((data) => {
-        let userData = JSON.parse(data)
-        
+        let userData = JSON.parse(data || "")
+
         // check if a user already has a session
         if (userData["session"] != null) {
             sessionID = userData["session"]["key"];
@@ -71,13 +73,13 @@ router.post('/create', authToken, (req, res) => {
                 key: sessionID,
                 created_at: timeStamp.toISOString()
             }
-            redisClient.hSet("users", username, JSON.stringify(userData)).then(() => {console.log(`Added session property for user ${username}`)});
+            redisClient.hSet("users", username, JSON.stringify(userData)).then(() => { console.log(`Added session property for user ${username}`) });
 
             // add the session to the sessions list
             redisClient.hSet("sessions", sessionID, JSON.stringify({
                 owner: username,
                 created_at: timeStamp.toISOString()
-            })).then(() => {console.log("Session Created!")})
+            })).then(() => { console.log("Session Created!") })
 
             // send back the session ID
             return res.status(201 /*Created*/).set({
@@ -93,4 +95,4 @@ router.post('/create', authToken, (req, res) => {
     })
 })
 
-module.exports = router;
+export default router;

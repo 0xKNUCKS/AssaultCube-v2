@@ -1,11 +1,11 @@
-const redis = require("redis")
+import * as redisModule from 'redis';
 
 // create a redis client
-const redisClient = redis.createClient();
+const redisClient: redisModule.RedisClientType = redisModule.createClient();
 
-redisClient.on('error', err => console.log(`[REDIS] Client Error:\t${err}`));
+redisClient.on('error', (err: redisModule.ErrorReply) => { console.log(`[REDIS] Client Error: ${err.message}`) });
 redisClient.on('connect', () => { console.log(`[REDIS] Connected to Redis DB server`); });
 
-redisClient.connect()
+redisClient.connect();
 
-module.exports = redisClient;
+export default redisClient;

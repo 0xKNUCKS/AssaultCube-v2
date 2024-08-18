@@ -1,25 +1,30 @@
 {
   "name": "server",
-  "version": "0.0.0",
+  "version": "1.0.0b",
   "private": true,
   "scripts": {
-    "start": "node app"
+    "start": "ts-node app"
   },
-  "description": "Server",
+  "description": "Back-End server for the project Assault Cube v2",
   "author": {
-    "name": ""
+    "name": "Adam Alattar"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "body-parser": "^1.15.0",
-    "chalk": "^5.3.0",
     "cookie-parser": "^1.4.0",
     "debug": "^2.2.0",
     "express": "^4.14.0",
     "morgan": "^1.7.0",
-    "pug": "^3.0.2",
-    "redis": "^4.6.13",
-    "socket.io": "^4.7.5",
-    "ws": "^8.17.1"
+    "pug": "^3.0.3",
+    "redis": "^4.7.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.9",
+    "@types/ws": "^8.5.12"
   }
 }

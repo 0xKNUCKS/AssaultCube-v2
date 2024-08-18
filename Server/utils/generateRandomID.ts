@@ -1,6 +1,6 @@
-const crypto = require('crypto');
+import * as crypto from 'crypto';
 
-module.exports = (salt, len) => {
+export default (salt: string, len: number) => {
   // Create a unique seed with the timestamp
   const timestamp = Date.now().toString();
 

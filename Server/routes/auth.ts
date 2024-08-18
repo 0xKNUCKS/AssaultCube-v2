@@ -1,9 +1,11 @@
 'use strict';
-const express = require('express');
-const router = express.Router();
-const redisClient = require("../shared/redisClient")
-const bcrypt = require("bcrypt");
-const generateRandomID = require('../utils/generateRandomID');
+import * as expressModule from 'express'
+import redisClient from '../shared/redisClient'
+import bcrypt from 'bcrypt'
+import generateRandomID from '../utils/generateRandomID'
+import User from '../interfaces/userData';
+
+const router = expressModule.Router();
 
 router.get('/', (req, res) => {
     // Give back user info to be then displayed in a "profile" page, not much to give now tho
@@ -32,16 +34,16 @@ router.post('/register', (req, res) => {
         }
 
         bcrypt.hash(password, 11).then((hashedPassword) => {
-            redisClient.hSet("users", username, JSON.stringify({
-                password: hashedPassword,
-                ip: req.ip,
-                token: null,
-                session: null,
-                timestamps: {
+            redisClient.hSet("users", username, new User(
+                hashedPassword,
+                req.ip || "",
+                null, // token
+                null, // session
+                { // timestamps
                     created: timeStamp.toISOString(),
                     last_login: timeStamp.toISOString()
-                }
-            })).then(() => { console.log(`> Registered New user (${username}:${req.ip})`) })
+                }).toJSON()
+            ).then(() => { console.log(`> Registered New user (${username}:${req.ip})`) })
         })
 
         return res.status(201 /*Created*/).set({
@@ -78,8 +80,7 @@ router.post('/login', (req, res) => {
         }
 
         redisClient.hGet("users", username).then((data) => {
-            let userData = JSON.parse(data);
-
+            let userData: User = User.fromJSON(data || "")
             bcrypt.compare(password, userData["password"]).then((result) => {
                 if (result) { // passed!
                     // generate a temporary token valid for 24hrs used to validate actions in the API.
@@ -87,13 +88,13 @@ router.post('/login', (req, res) => {
                     const tokenExpiryDate = new Date(new Date().setDate(timeStamp.getDate() + 1)) // 1 day from now.
 
                     // Update the last login timestamp & store token
-                    userData["timestamps"]["last_login"] = timeStamp.toISOString()
-                    userData["token"] = {
+                    userData.timestamps.last_login = timeStamp.toISOString();
+                    userData.token = {
                         key: tokenId,
-                        expiry: tokenExpiryDate
+                        expiry: tokenExpiryDate.toISOString()
                     }
 
-                    redisClient.hSet("users", username, JSON.stringify(userData)).then(() => {
+                    redisClient.hSet("users", username, userData.toJSON()).then(() => {
                         console.log(`> User successfully logged in [${username} with token ${tokenId}]`)
                     })
 
@@ -120,4 +121,4 @@ router.post('/login', (req, res) => {
     })
 })
 
-module.exports = router;
+export default router;
