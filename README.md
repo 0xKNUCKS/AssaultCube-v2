@@ -3,7 +3,7 @@
 the idea of this project: a cheat that's controlled by an API, and can be interacted with through a website or however you choose to use the API. </br>
 the API is based on: </br>
 
-* node.js
+* TypeScript
 * express.js
 * Redis </br>
 
